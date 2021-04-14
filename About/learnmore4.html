@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+<title>About Chip-8</title>
+<style>
+  body {
+  background-color: #faf2e4;
+  margin: 0 15%;
+  font-family: Courier;
+  }
+
+h1 {
+  text-align: center;
+  font-family: Courier;
+  font-weight: normal;
+  text-transform: uppercase;
+  border-bottom: 1px solid #57b1dc;
+  margin-top: 30px;
+}
+
+h2 {
+  color: #d1633c;
+  font-size: 1.5em;
+}
+
+</style>
+</head>
+
+<body>
+<h1>Instructions</h1>
+<p>
+  The original implementation of the Chip-8 language includes 36 different <br>
+  instructions, including math, graphics, and flow control functions.<br><br>
+  Super Chip-48 added an additional 10 instructions, for a total of 46.<br><br>
+  All instructions are 2 bytes long and are stored most-significant-byte<br>
+  first. In memory, the first byte of each instruction should be located at<br>
+  an even addresses. If a program includes sprite data, it should be padded so<br>
+  any instructions following it will be properly situated in RAM.<br><br>
+  It’s time to actually decode the instructions! Just go one by one.<br><br>
+  A small tip here. I suggest you start out with the following<br> instructions:<br><br>
+  <ul>
+    <li>00E0 (clear screen)</li><br>
+    <li>1NNN (jump)</li><br>
+    <li>6XNN (set register VX)</li><br>
+    <li>7XNN (add value to register VX)</li><br>
+    <li>ANNN (set index register I)</li><br>
+    <li>DXYN (display/draw)</li><br>
+  </ul><br><br>
+  The reason for this is that while you implement these instructions,<br>
+  you can test them very easily with the IBM logo program, which you<br>
+  can easily find online (search “chip-8 ibm logo”). All this program<br>
+  does is display the IBM logo, and it only uses the above instructions.<br>
+  This will let you quickly implement the most important instruction, <br>
+  the “display” instruction DXYN, which you will need to run more <br>
+  advanced test ROMs since these all display the results on the screen.<br><br>
+  When you’ve managed to get this on your display, you can use test<br>
+  programs to check your implementation of the rest of the instructions<br>
+   as you go along. There are two main tests:<br><br>
+   <ul>
+     <li>The BonCoder/BestCoder test, BC_test (can be found online)</li><br>
+     <li><a href="https://github.com/corax89/chip8-test-rom" target="_blank">corax89’s chip8-test-rom.</a></li><br>
+   </ul>
+   Note that both these test programs rely on the “modern” behavior in the<br>
+  few ambiguous instructions listed below (I put red warning labels above<br>
+  their descriptions).<br><br>
+</p>
+<h2>0NNN: Execute machine language routine</h2>
+<p>
+  We’ll start out with an instruction that you actually don’t want to<br>
+  implement! In the original CHIP-8 interpreters, this would pause<br>
+  execution of the CHIP-8 program and call a subroutine written in<br>
+  machine language at address NNN instead.<br><br>
+  This routine would be written in the machine language of the<br>
+  computer’s CPU; on the original COSMAC VIP and the ETI-660, this<br>
+  was 1802 machine code, and on the DREAM 6800, M6800 code. Unless<br>
+  you’re making an emulator for either of those computers, skip this one.<br><br>
+  </p>
+
+  <h2>00E0: Clear screen</h2>
+  <p>
+    This is pretty simple: It should clear the display, turning all<br>
+     pixels off to 0.<br><br>
+  </p>
+  <h2>1NNN: Jump</h2>
+  <p>
+    This instruction should simply set PC to NNN, causing the program<br>
+    to jump to that memory location. Do not increment the PC afterwards,<br>
+    it jumps directly there.<br><br>
+  </p>
+  <h2>0EE and 2NNN: Subroutines</h2>
+  <p>
+    2NNN calls the subroutine at memory location NNN. In other words, just<br>
+    like 1NNN, you should set PC to NNN. However, the difference between a<br>
+    jump and a call is that this instruction should first should push the<br>
+    current PC to the stack, so the subroutine can return later.<br><br>
+    Returning from a subroutine is done with 00EE, and it does this by removing<br>
+    (“popping”) the last address from the stack and setting the PC to it.<br><br>
+  </p>
+  <h2>3XNN, 4XNN, 5XY0 and 9XY0: Skip</h2>
+  <p>
+    These instructions do the same thing: They either do nothing, or they skip<br>
+    one two-byte instruction (increment PC by 2). If you didn’t increment PC in<br>
+    the “fetch” stage above, they will obviously increment PC by either 4 or 2.<br><br>
+    3XNN will skip one instruction if the value in VX is equal to NN, and 4XNN<br>
+    will skip if they are not equal.<br><br>
+    5XY0 skips if the values in VX and VY are equal, while 9XY0 skips if they<br>
+    are not equal.<br><br>
+    Since these conditional branch instructions can only skip one instructions,<br>
+    they’re usually followed by a jump/call (1NNN/2NNN) instruction.<br><br>
+  </p>
+  <h2>6XNN: Set</h2>
+  <p>
+    Simply set the register VX to the value NN.
+  </p>
+  <h2>7XNN: Add</h2>
+  <p>
+    Add the value NN to VX.<br><br>
+    Note that on most other systems, and even in some of the other CHIP-8<br>
+    instructions, this would set the carry flag if the result overflowed 8<br>
+    bits. In other words, if the result of the addition is over 255.<br><br>
+    For this instruction, this is not the case. If V0 contains FF and<br>
+    you execute 6001, the CHIP-8’s flag register VF is not affected.<br>
+  </p>
+  <h2>Logical and arithmetic instructions</h2>
+  <p>
+    We come to the first group of instructions that need further decoding beyond<br>
+    just the first nibble! All these instructions are logical or arithmetic<br>
+    operations, but which one is decided by the last nibble of the opcode. Do<br>
+     another nested switch statement (or equivalent) here.<br><br>
+  </p>
+  <h2>8XY0: Set</h2>
+  <p>
+    VX is set to the value of VY.
+  </p>
+  <h2>8XY1: Logical OR</h2>
+  <p>
+    VX is set to the bitwise logical disjunction (OR) of VX and VY. VY is not<br>
+     affected.
+  </p>
+  <h2>8XY2: Logical AND</h2>
+  <p>
+    VX is set to the bitwise logical conjunction (AND) of VX and VY. VY is not affected.
+  </p>
+  <h2>8XY3: Logical XOR</h2>
+  <p>
+    VX is set to the bitwise exclusive OR (XOR) of VX and VY. VY is not affected.
+  </p>
+  <h2>8XY4: Add</h2>
+  <p>
+    VX is set to the value of VX plus the value of VY. VY is not affected.<br><br>
+    Unlike 7XNN, this addition will affect the carry flag. If the result is<br>
+    larger than 255 (and thus overflows the 8-bit register VX), the flag<br>
+    register VF is set to 1. If it doesn’t overflow, VF is set to 0.<br>
+  </p>
+  <h2>8XY5 and 8XY7: Subtract</h2>
+  <p>
+    These both subtract the value in one register from the other, and put the<br>
+    result in VX. In both cases, VY is not affected.<br><br>
+    8XY5 sets VX to the result of VX - VY.<br><br>
+    8XY7 sets VX to the result of VY - VX.<br><br>
+    This subtraction will also affect the carry flag, but note that it’s opposite<br>
+    from what you might think. If the minuend (the first operand) is larger than<br>
+    the subtrahend (second operand), VF will be set to 1. If the subtrahend is<br>
+    larger, and we “underflow” the result, VF is set to 0. Another way of thinking<br>
+    of it is that VF is set to 1 before the subtraction, and then the subtraction<br>
+     either borrows from VF (setting it to 0) or not.<br>
+  </p>
+  <h2>8XY6 and 8XYE: Shift</h2>
+  <p>
+    In the CHIP-8 interpreter for the original COSMAC VIP, this instruction did<br>
+    the following: It put the value of VY into VX, and then shifted the value in<br>
+    VX 1 bit to the right (8XY6) or left (8XYE). VY was not affeced, but the flag<br>
+    register VF would be set to the bit that was shifted out.<br><br>
+    However, starting with CHIP-48 and SUPER-CHIP in the early 1990s, these<br>
+    instructions were changed so that they shifted VX in place, and ignored the<br>
+    Y completely.<br><br>
+    This is one of the main differences between implementations that cause<br>
+     problems for programs.<br><br>
+     Step by step:<br><br>
+     <ol>
+       <li>(Optional, or configurable) Set VX to the value of VY</li><br>
+       <li>Shift the value of VX one bit to the right (8XY6) or left ( 8XYE`)</li><br>
+       <li>Set VF to 1 if the bit that was shifted out was 1, or 0 if it was 0</li><br>
+     </ol>
+  </p>
+  <h2>ANNN: Set index</h2>
+  <p>
+    This sets the index register I to the value NNN.<br><br>
+  </p>
+  <h2>BNNN: Jump with offset</h2>
+  <p>
+    In the original COSMAC VIP interpreter, this instruction jumped to the address<br>
+    NNN plus the value in the register V0. This was mainly used for “jump tables”,<br>
+    to quickly be able to jump to different subroutines based on some input.<br><br>
+    Starting with CHIP-48 and SUPER-CHIP, it was (probably unintentionally) changed<br>
+    to work as BXNN: It will jump to the address XNN, plus the value in the register<br>
+    VX. So the instruction B220 will jump to address 220 plus the value in the register V2.<br><br>
+    The BNNN instruction was not widely used, so you might be able to just implement<br>
+    the first behavior (if you pick one, that’s definitely the one to go with).<br>
+    If you want to support a wide range of CHIP-8 programs, make this “quirk” configurable.<br><br>
+  </p>
+  <h2>CXNN: Random</h2>
+  <p>
+    This instruction generates a random number, binary ANDs it with the value NN,<br>
+    and puts the result in VX.<br><br>
+    Most likely your programming language has a function for generating random<br>
+    numbers. It will work fine for this use.<br><br>
+    <em>Note that you should not simply generate a random number between 0 and<br>
+    NN! You need to do a binary AND.</em><br>
+  </p>
+  <h2>DXYN: Display</h2>
+  <p>
+    This is the most involved instruction. It will draw an N pixels tall sprite<br>
+    from the memory location that the I index register is holding to the screen,<br>
+    at the horizontal X coordinate in VX and the Y coordinate in VY. All the pixels<br>
+    that are “on” in the sprite will flip the pixels on the screen that it is<br>
+    drawn to. If any pixels on the screen were turned “off” by this,<br> the VF flag register is set to 1.<br>
+   Otherwise, it’s set to 0.<br><br>
+    Sounds hard? Well, it is, a little.<br><br>
+    The first thing to do is to get the X and Y coordinates from VX and VY.<br><br>
+    A common mistake here is to use X and Y directly; don’t do that, fetch them<br>
+     from the registers.<br><br>
+    One area where people get confused is whether sprites should wrap if they<br>
+    go over the edge of the screen. The answer is yes and no.<br><br>
+   The starting position of the sprite will wrap. In other words, an X coordinate<br>
+  of 5 is the same as an X of 68 (since the screen is 64 pixels wide). Another<br>
+  way of saying it is that the coordinates are modulo (or logical AND) the<br>
+   size of the display.<br><br>
+   However, the actual drawing of the sprite should not wrap. If a sprite is<br>
+  drawn near the edge of the screen, it should be clipped, and not wrap. The<br>
+  sprite should be partly drawn near the edge, and the other part should not<br>
+  reappear on the opposite side of the screen.<br><br>
+  Skip this if you want to try to implement it yourself first, but here’s a<br>
+  step by step summary of what this instruction should do:<br><br>
+  <ul>
+    <li>Set the X coordinate to the value in VX modulo 64 (or, equivalently,<br>
+      VX AND 64)</li><br>
+    <li>Set the Y coordinate to the value in VY modulo 32 (or VY AND 32)</li><br>
+    <li>Set VF to 0</li><br><br>
+    <li>For N rows:</li><br>
+    <ul>
+      <li>Get one byte of sprite data from the memory address in the I<br>
+         register</li><br>
+         <li>For each of the 8 pixels/bits in this sprite row:</li><br>
+         <ul>
+           <li>If the current pixel in the sprite row is on and the<br>
+              pixel at coordinates X,Y on the screen is also on, <br>
+              turn off the pixel and set VF to 1</li><br>
+              <li>Or if the current pixel in the sprite row is on and the screen<br>
+                 pixel is not, draw the pixel at the X and Y coordinates</li><br>
+                 <li>If you reach the right edge of the screen, stop drawing<br> this row</li><br>
+                 <li>Increment X</li><br>
+         </ul>
+         <li>Increment Y</li>
+         <li>Stop if you reach the bottom edge of the screen</li>
+    </ul>
+  </ul><br>
+  Phew! Don’t worry, this is the worst one.<br><br>
+  </p>
+  <h2>EX9E and EXA1: Skip if key</h2>
+  <p>
+    Like the earlier skip instructions, these two also skip the following <br>
+    instruction based on a condition. These skip based on whether the player is<br>
+     currently pressing a key or not.<br><br>
+     These instructions (unlike the later FX0A) don’t wait for input, they just<br>
+    check if the key is currently being held down.<br><br>
+    EX9E will skip one instruction (increment PC by 2) if the key corresponding<br>
+     to the value in VX is pressed.<br><br>
+     EXA1 skips if the key corresponding to the value in VX is not pressed.<br><br>
+     Since the keypad is hexadecimal, the valid values here are keys 0–F.<br><br>
+  </p>
+  <h2>FX07, FX15 and FX18: Timers</h2>
+  <p>
+    These all manipulate the timers.<br><br>
+    <ul>
+      <li>FX07 sets VX to the current value of the delay timer</li><br>
+      <li>FX15 sets the delay timer to the value in VX</li><br>
+      <li>FX18 sets the sound timer to the value in VX</li><br>
+    </ul>
+    Note that there’s no instruction to read the sound timer; the sound timer<br>
+    will simply make a beeping sound as long as it’s above 0.<br><br>
+  </p>
+  <h2>FX1E: Add to index</h2>
+  <p>
+    The index register I will get the value in VX added to it.<br><br>
+    Unlike other arithmetic instructions, this did not affect VF on overflow on<br>
+    the original COSMAC VIP. However, it seems that some interpreters set VF to<br>
+    1 if I “overflows” from 0FFF to above 1000 (outside the normal addressing<br>
+    range). This wasn’t the case on the original COSMAC VIP, at least, but <br>
+    apparently the CHIP-8 interpreter for Amiga behaved this way. At least one<br>
+    known game, Spacefight 2091!, relies on this behavior. I don’t know of any<br>
+    games that rely on this not happening, so perhaps it’s safe to do it like <br>
+    the Amiga interpreter did.<br><br>
+  </p>
+  <h2>FX0A: Get key</h2>
+  <p>
+    This instruction “blocks”; it stops execution and waits for key input. In<br>
+    other words, if you followed my advice earlier and increment PC after <br>
+    fetching each instruction, then it should be decremented again here unless<br>
+    a key is pressed. Otherwise, PC should simply not be incremented.<br><br>
+    If a key is pressed while this instruction is waiting for input, its<br>
+    hexadecimal value will be put in VX and execution continues.<br><br>
+    On the original COSMAC VIP, the key was only registered when it was pressed<br>
+     and then released.<br><br>
+  </p>
+  <h2>FX29: Font character</h2>
+  <p>
+    The index register I is set to the address of the hexadecimal character in<br>
+    VX. You probably stored that font somewhere in the first 512 bytes of memory,<br>
+    so now you just need to point I to the right character.<br><br>
+    An 8-bit register can hold two hexadecimal numbers, but this would only point<br>
+    to one character. The original COSMAC VIP interpreter just took the last <br>
+    nibble of VX and used that as the character.<br><br>
+  </p>
+  <h2>FX33: Binary-coded decimal conversion</h2>
+  <p>
+    This instruction is a little involved. It takes the number in VX (which is<br>
+    one byte, so it can be any number from 0 to 255) and converts it to three <br>
+    decimal digits, storing these digits in memory at the address in the index<br>
+    register I. For example, if VX contains 156 (or 9C in hexadecimal), it would<br>
+    put the number 1 at the address in I, 5 in address I + 1, and 6 in<br>
+   address I + 2.<br><br>
+   Many people seem to struggle with this instruction. You’re lucky; the early<br>
+  CHIP-8 interpreters couldn’t divide by 10 or easily calculate a number modulo<br>
+  10, but you can probably do both in your programming language. Do it to extract<br>
+  the necessary digits.<br><br>
+  </p>
+  <h2>FX55 and FX65: Store and load memory</h2>
+  <p>
+    These two instructions store registers to memory, or load them from memory,<br>
+     respectively.<br><br>
+     For FX55, the value of each variable register from V0 to VX inclusive (if<br>
+    X is 0, then only V0) will be stored in successive memory addresses, starting<br>
+    with the one that’s stored in I. V0 will be stored at the address in I, V1<br>
+     will be stored in I + 1, and so on, until VX is stored in I + X.<br><br>
+     FX65 does the same thing, except that it takes the value stored at the memory<br>
+    addresses and loads them into the variable registers instead.<br><br>
+    The original CHIP-8 interpreter for the COSMAC VIP actually incremented the<br>
+    I register while it worked. Each time it stored or loaded one register, it<br>
+    incremented I. After the instruction was finished, I would be set to the<br>
+     new value I + X + 1.<br><br>
+     However, modern interpreters (starting with CHIP48 and SUPER-CHIP in the<br>
+    early 90s) used a temporary variable for indexing, so when the instruction<br>
+    was finished, I would still hold the same value as it did before.<br><br>
+    If you only pick one behavior, go with the modern one that doesn’t actually<br>
+    change the value of I. This will let you run the common CHIP-8 games you<br>
+    find everywhere, and it’s also what the common test ROMs depend on (the<br>
+    other behavior will fail the tests). But if you want your emulator to run<br>
+    older games from the 1970s or 1980s, you should consider making a configurable<br>
+    option in your emulator to toggle between these behaviors.<br><br>
+  </p>
+  <h2>Troubleshooting</h2>
+  <p>
+    Your emulator is done! What’s that? Something’s not working?<br><br>
+    To make your life easier, you should add some rudimentary debugging<br>
+    capabilities. For example, you should be able to step through CHIP-8<br>
+    instructions one by one, pausing the regular loop. You should also be<br>
+    able to print the contents of registers and memory. That way you can step<br>
+    through a program and see that it behaves like you expect.<br><br>
+    One thing you should do is print out an error message if your emulator<br>
+    tries to execute an unknown instruction. There aren’t many of them, but if<br>
+    you suddenly try to execute a lot of 0000 instructions, you know you’ve<br>
+    somehow reached uninitialized memory.<br><br>
+    Like I said before, you should start out by getting the IBM logo program to<br>
+    run. Once you can draw to the screen properly, run one of the CHIP-8 test<br>
+    programs you can find online. They will check your instructions and tell you<br>
+    which ones aren’t working properly. (Note that for the ambiguous instructions,<br>
+    they will mostly expect the “modern” behavior.)<br><br>
+  </p>
+
+
+
+
+
+
+
+</body>
+
+</html>

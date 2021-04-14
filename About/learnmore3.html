@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+<title>About Chip-8</title>
+<style>
+  body {
+  background-color: #faf2e4;
+  margin: 0 15%;
+  font-family: Courier;
+  }
+
+h1 {
+  text-align: center;
+  font-family: Courier;
+  font-weight: normal;
+  text-transform: uppercase;
+  border-bottom: 1px solid #57b1dc;
+  margin-top: 30px;
+}
+
+h2 {
+  color: #d1633c;
+  font-size: 2em;
+}
+
+</style>
+</head>
+
+<body>
+<h1>Specifications</h1>
+
+<h2>CHIP-8 has the following components:</h2>
+<p>
+  <ul>
+    <li>Memory: CHIP-8 has direct access to up to 4 kilobytes of RAM.</li><br>
+    <li>Display: 64 x 32 pixels (or 128 x 64 for SUPER-CHIP)<br> monochrome, ie. black or white</li><br>
+    <li>A program counter, often called just “PC”, which points at<br> the current instruction in memory</li><br>
+    <li>One 16-bit index register called “I” which is used to<br> point at locations in memory</li><br>
+    <li>A stack for 16-bit addresses, which is used to call<br> subroutines/functions and return from them</li><br>
+    <li>An 8-bit delay timer which is decremented at a<br> rate of 60 Hz (60 times per second) until it reaches 0</li><br>
+    <li>An 8-bit sound timer which functions like the delay timer,<br> but which also gives off a beeping sound as long as it’s not 0</li><br>
+    <li>16 8-bit (one byte) general-purpose variable registers numbered 0<br> through F hexadecimal, ie. 0 through 15 in decimal, called V0 through `VF</li><br>
+    <li>VF is also used as a flag register; many instructions will set it to<br> either 1 or 0 based on some rule, for example using it as a carry flag</li><br>
+
+  </ul>
+</p>
+
+<h2>Memory</h2>
+<p>The memory should be 4 kB (4 kilobytes, ie. 4096 bytes) large.<br>
+   CHIP-8’s index register and program counter can only address 12 bits (conveniently), which is 4096 addresses.<br><br>
+ <em>Both the index register, program counter and stack entries are actually 16 bits long.<br>
+    In theory, they could increment beyond 4 kB of memory addresses.<br>
+     In practice, no CHIP-8 games do that. The early computers running CHIP-8 usually had less than 4 kB of RAM anyway.</em><br><br>
+     All the memory is RAM and should be considered to be writable.<br>
+      CHIP-8 games can, and do, modify themselves.<br><br>
+    <em>CHIP-8 programs you find online as binary files are often called “ROMs”,<br> like game files for video game emulators, but unlike games on console cartridges<br> they were not actually ROM (which means “read-only memory”).</em><br><br>
+    The first CHIP-8 interpreter (on the COSMAC VIP computer) was also located in RAM,<br>
+     from address 000 to 1FF. It would expect a CHIP-8 program to be loaded into memory after it,
+     <br> starting at address 200 (512 in decimal).<br>
+      Although modern interpreters are not in the same memory space, you should do the same to be able to run the old programs;<br>
+       you can just leave the initial space empty, except for the font.<br><br>
+</p>
+<h2>Fonts</h2>
+ <p>The CHIP-8 emulator should have a built-in font,<br> with sprite data representing the hexadecimal numbers from 0 through F.<br>
+    Each font character should be 4 pixels wide by 5 pixels tall.<br>
+    These font sprites are drawn just like regular sprites (see below).<br><br>
+    You should store the font data in memory, because games will draw these characters like regular sprites:<br>
+     They set the index register I to the character’s memory location and then draw it.<br>
+      There’s a special instruction for setting I to a character’s address, so you can choose where to put it.<br>
+       Anywhere in the first 512 bytes (000–1FF) is fine. For some reason,<br>
+        it’s become popular to put it at 050–09F, so you can follow that convention if you want.<br><br>
+        The font most people use is represented in bytes like this:<br><br>
+        <p style='color: white'>
+        <span style="background-color: #808080">
+        0xF0, 0x90, 0x90, 0x90, 0xF0, // 0<br><br>
+0x20, 0x60, 0x20, 0x20, 0x70, // 1<br><br>
+0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2<br><br>
+0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3<br><br>
+0x90, 0x90, 0xF0, 0x10, 0x10, // 4<br><br>
+0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5<br><br>
+0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6<br><br>
+0xF0, 0x10, 0x20, 0x40, 0x40, // 7<br><br>
+0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8<br><br>
+0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9<br><br>
+0xF0, 0x90, 0xF0, 0x90, 0x90, // A<br><br>
+0xE0, 0x90, 0xE0, 0x90, 0xE0, // B<br><br>
+0xF0, 0x80, 0x80, 0x80, 0xF0, // C<br><br>
+0xE0, 0x90, 0x90, 0x90, 0xE0, // D<br><br>
+0xF0, 0x80, 0xF0, 0x80, 0xF0, // E<br><br>
+0xF0, 0x80, 0xF0, 0x80, 0x80  // F<br><br><br>
+</span>
+</p>
+</p>
+
+<h2>Display</h2>
+<p>
+  The original implementation of the Chip-8 language used a 64x32-pixel( 64 pixels wide and 32 pixels tall)<br>
+   monochrome display with this format:<br><br>
+
+  <TABLE BORDER=1 WIDTH=128 HEIGHT=64 CELLPADDING=0 CELLSPACING=0 ALIGN=center>
+			<TR><TD>
+				<TABLE BORDER=0 HEIGHT=60 WIDTH=100%>
+					<TR><TD VALIGN=top ALIGN=left>(0,0)</TD><TD VALIGN=top ALIGN=right>(63,0)</TD></TR>
+					<TR><TD VALIGN=bottom ALIGN=left>(0,31)</TD><TD VALIGN=bottom ALIGN=right>(63,31)</TD></TR>
+				</TABLE>
+			</TD></TR>
+		</TABLE>
+    <br><br>
+
+    Each pixel can be on or off. In other words, each pixel is a boolean value, or a bit.<br><br>
+    <em>
+      The early computers used regular TVs as screens, so an “off” pixel was just black,<br>
+       and “on” was white. You can pick other colors.
+    </em><br><br>
+
+    Original interpreters updated the display at 60 Hz (ie. they had 60<br>
+     FPS, to use modern terminology). How you do this is up to you, but<br>
+      depending on the framework you use, it might be a good idea to only<br>
+       redraw the screen when your emulator executes an instruction<br>
+        that modifies the display data (there are two), to run faster.<br><br>
+
+        Some other interpreters, most notably the one on the ETI 660,<br>
+        also had 64x48 and 64x64 modes.More recently, Super Chip-48,<br>
+         an interpreter for the HP48 calculator, added a 128x64-pixel mode.<br>
+          This mode is now supported by most of the interpreters<br> on other platforms.<br><br>
+
+          The details of the drawing instruction DXYN are found below, but in short,<br>
+          it is used to draw a “sprite” on the screen. Each sprite consists<br>
+          of 8-bit bytes, where each bit corresponds to a horizontal pixel;<br>
+          sprites are between 1 and 15 bytes tall. They’re drawn to the<br>
+          screen by treating all 0 bits as transparent, and all the 1 bits<br>
+          will “flip” the pixels in the locations of the screen that<br>
+          it’s drawn to. (You might recognize this as logical XOR.)<br><br>
+          <em>
+            A sprite is a group of bytes which are a binary representation of the<br>
+            desired picture. Chip-8 sprites may be up to 15 bytes,<br>
+             for a possible sprite size of 8x15.<br><br>
+           </em>
+
+             This method of drawing will inevitable cause some flickering objects;<br>
+            when a sprite is moved, it’s first erased from the screen (by simply drawing<br>
+            it again, flipping all its lit pixels) and then re-drawn in the new position,<br>
+            so it will disappear for a little while, often causing a flickering effect.<br>
+            If you want, you can try to think of ways to mitigate this. For example,<br>
+            pixels that are erased could fade out instead of disappearing completely,<br>
+            giving an old phosphorous CRT-style effect.<br><br>
+
+            Programs may also refer to a group of sprites representing the<br>
+            hexadecimal digits 0 through F. These sprites are 5 bytes long,<br>
+            or 8x5 pixels. The data should be stored in the interpreter area of<br>
+            Chip-8 memory (0x000 to 0x1FF). Below is a listing of each character's<br>
+            bytes, in binary and hexadecimal:<br><br>
+
+
+
+            <A NAME="font">&nbsp;</A>
+		<TABLE ALIGN=center>
+			<TR>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"0"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								*&nbsp;&nbsp;*<BR>
+								*&nbsp;&nbsp;*<BR>
+								*&nbsp;&nbsp;*<BR>
+								****<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								10010000<BR>
+								10010000<BR>
+								10010000<BR>
+								11110000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x90<BR>
+								0x90<BR>
+								0x90<BR>
+								0xF0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"1"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								&nbsp;&nbsp;*&nbsp;<BR>
+								&nbsp;**&nbsp;<BR>
+								&nbsp;&nbsp;*&nbsp;<BR>
+								&nbsp;&nbsp;*&nbsp;<BR>
+								&nbsp;***<BR>
+							</TT></TD>
+							<TD><TT>
+								00100000<BR>
+								01100000<BR>
+								00100000<BR>
+								00100000<BR>
+								01110000<BR>
+							</TT></TD>
+							<TD><TT>
+								0x20<BR>
+								0x60<BR>
+								0x20<BR>
+								0x20<BR>
+								0x70<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+			<TR>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"2"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								&nbsp;&nbsp;&nbsp;*<BR>
+								****<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+								****<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								00010000<BR>
+								11110000<BR>
+								10000000<BR>
+								11110000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x10<BR>
+								0xF0<BR>
+								0x80<BR>
+								0xF0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"3"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								&nbsp;&nbsp;&nbsp;*<BR>
+								****<BR>
+								&nbsp;&nbsp;&nbsp;*<BR>
+								****<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								00010000<BR>
+								11110000<BR>
+								00010000<BR>
+								11110000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x10<BR>
+								0xF0<BR>
+								0x10<BR>
+								0xF0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+
+			<TR>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"4"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								*&nbsp;&nbsp;*<BR>
+								*&nbsp;&nbsp;*<BR>
+								****<BR>
+								&nbsp;&nbsp;&nbsp;*<BR>
+								&nbsp;&nbsp;&nbsp;*<BR>
+							</TT></TD>
+							<TD><TT>
+								10010000<BR>
+								10010000<BR>
+								11110000<BR>
+								00010000<BR>
+								00010000<BR>
+							</TT></TD>
+							<TD><TT>
+								0x90<BR>
+								0x90<BR>
+								0xF0<BR>
+								0x10<BR>
+								0x10<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"5"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+								****<BR>
+								&nbsp;&nbsp;&nbsp;*<BR>
+								****<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								10000000<BR>
+								11110000<BR>
+								00010000<BR>
+								11110000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x80<BR>
+								0xF0<BR>
+								0x10<BR>
+								0xF0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+			<TR>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"6"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+								****<BR>
+								*&nbsp;&nbsp;*<BR>
+								****<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								10000000<BR>
+								11110000<BR>
+								10010000<BR>
+								11110000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x80<BR>
+								0xF0<BR>
+								0x90<BR>
+								0xF0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"7"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								&nbsp;&nbsp;&nbsp;*<BR>
+								&nbsp;&nbsp;*&nbsp;<BR>
+								&nbsp;*&nbsp;&nbsp;<BR>
+								&nbsp;*&nbsp;&nbsp;<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								00010000<BR>
+								00100000<BR>
+								01000000<BR>
+								01000000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x10<BR>
+								0x20<BR>
+								0x40<BR>
+								0x40<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+
+			<TR>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"8"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								*&nbsp;&nbsp;*<BR>
+								****<BR>
+								*&nbsp;&nbsp;*<BR>
+								****<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								10010000<BR>
+								11110000<BR>
+								10010000<BR>
+								11110000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x90<BR>
+								0xF0<BR>
+								0x90<BR>
+								0xF0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"9"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								*&nbsp;&nbsp;*<BR>
+								****<BR>
+								&nbsp;&nbsp;&nbsp;*<BR>
+								****<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								10010000<BR>
+								11110000<BR>
+								00010000<BR>
+								11110000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x90<BR>
+								0xF0<BR>
+								0x10<BR>
+								0xF0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+			<TR>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"A"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								*&nbsp;&nbsp;*<BR>
+								****<BR>
+								*&nbsp;&nbsp;*<BR>
+								*&nbsp;&nbsp;*<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								10010000<BR>
+								11110000<BR>
+								10010000<BR>
+								10010000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x90<BR>
+								0xF0<BR>
+								0x90<BR>
+								0x90<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"B"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								***&nbsp;<BR>
+								*&nbsp;&nbsp;*<BR>
+								***&nbsp;<BR>
+								*&nbsp;&nbsp;*<BR>
+								***&nbsp;<BR>
+							</TT></TD>
+							<TD><TT>
+								11100000<BR>
+								10010000<BR>
+								11100000<BR>
+								10010000<BR>
+								11100000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xE0<BR>
+								0x90<BR>
+								0xE0<BR>
+								0x90<BR>
+								0xE0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+
+			<TR>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"C"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+								****<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								10000000<BR>
+								10000000<BR>
+								10000000<BR>
+								11110000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x80<BR>
+								0x80<BR>
+								0x80<BR>
+								0xF0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"D"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								***&nbsp;<BR>
+								*&nbsp;&nbsp;*<BR>
+								*&nbsp;&nbsp;*<BR>
+								*&nbsp;&nbsp;*<BR>
+								***&nbsp;<BR>
+							</TT></TD>
+							<TD><TT>
+								11100000<BR>
+								10010000<BR>
+								10010000<BR>
+								10010000<BR>
+								11100000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xE0<BR>
+								0x90<BR>
+								0x90<BR>
+								0x90<BR>
+								0xE0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+			<TR>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"E"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+								****<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+								****<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								10000000<BR>
+								11110000<BR>
+								10000000<BR>
+								11110000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x80<BR>
+								0xF0<BR>
+								0x80<BR>
+								0xF0<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+				<TD>
+					<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>
+						<TR><TD>"F"</TD><TD>Binary</TD><TD>Hex</TD></TR>
+						<TR>
+							<TD><TT>
+								****<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+								****<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+								*&nbsp;&nbsp;&nbsp;<BR>
+							</TT></TD>
+							<TD><TT>
+								11110000<BR>
+								10000000<BR>
+								11110000<BR>
+								10000000<BR>
+								10000000<BR>
+							</TT></TD>
+							<TD><TT>
+								0xF0<BR>
+								0x80<BR>
+								0xF0<BR>
+								0x80<BR>
+								0x80<BR>
+							</TT></TD>
+						</TR>
+					</TABLE>
+				</TD>
+			</TR>
+
+		</TABLE>
+		</FONT></TT>
+		<BR>
+		<BR>
+</p>
+
+<h2>Stack</h2>
+
+<p>
+  CHIP-8 has a stack (a common “last in, first out” data structure<br>
+  where you can either “push” data to it or “pop” the last piece of<br>
+  data you pushed). You can represent it however you’d like; a stack if<br>
+  your programming language has it, or an array. CHIP-8 uses it to call<br>
+  and return from subroutines (“functions”) and nothing else, so you will<br>
+  be saving addresses there; 16-bit (or really only 12-bit) numbers.<br><br>
+  Early interpreters reserved some memory for the stack, and some programs<br>
+  would use that knowledge to operate the stack directly and save stuff there,<br>
+  but you don’t need to do that. You can just use a variable outside the<br>
+  emulated memory.<br><br>
+  These original interpreters had limited space on the stack; usually 12 or 16<br>
+  two-byte entries. You can limit the stack likewise, or just keep it unlimited.<br>
+  It doesn’t really matter (unless you encounter a program with a bug that has an<br>
+  infinite call loop and causes a “stack overflow”).<br><br>
+</p>
+
+<h2>Timers</h2>
+<p>
+  There are two separate timer registers: The delay timer and the sound timer.<br>
+  They both work the same way; they’re one byte in size, and as long as their<br>
+  value is above 0, they should be decremented by one 60 times per second (ie. at 60 Hz).<br>
+  This is independent of the speed of the fetch/decode/execute loop below.<br><br>
+  The sound timer is special in that it should make the computer “beep”<br>
+  as long as it’s above 0.<br><br>
+  Even though it’s called the “delay” timer, your interpreter should run as normal<br>
+  while it’s being decremented (the same goes for the sound timer). The CHIP-8 game<br>
+  will check the value of the timer and delay itself if it wants.<br><br>
+  </p>
+
+  <h2>Keypad</h2>
+  <p>
+    The earliest computers that CHIP-8 were used with had hexadecimal keypads.<br>
+    These had 16 keys, labelled 0 through F, and were arranged in a 4x4 grid.<br><br>
+    <em>On the original COSMAC VIP, a sound (the same sound as the sound<br>
+       timer uses) would be heard while holding down a key.<br>
+        This might be a little obnoxious, though…</em><br><br>
+        These keypads all had different layouts, but the COSMAC VIP used<br>
+        the following layout, which was re-used on the HP48 calculators,<br>
+        so that’s what everyone implements these days:<br><br><br>
+
+        <TABLE BORDER=8 CELLPADDING=10 CELLSPACING=0 ALIGN=center>
+			<TR><TD><TT>1</TT></TD><TD><TT>2</TT></TD><TD><TT>3</TT></TD><TD><TT>C</TT></TD></TR>
+			<TR><TD><TT>4</TT></TD><TD><TT>5</TT></TD><TD><TT>6</TT></TD><TD><TT>D</TT></TD></TR>
+			<TR><TD><TT>7</TT></TD><TD><TT>8</TT></TD><TD><TT>9</TT></TD><TD><TT>E</TT></TD></TR>
+			<TR><TD><TT>A</TT></TD><TD><TT>0</TT></TD><TD><TT>B</TT></TD><TD><TT>F</TT></TD></TR>
+		</TABLE>
+    <br><br>
+
+    For CHIP-8 emulators that run on modern PCs, it’s customary to<br>
+    use the left side of the QWERTY keyboard for this:<br><br>
+
+    <TABLE BORDER=1 CELLPADDING=10 CELLSPACING=8 ALIGN=center>
+      <TR><TD><TT>1</TT></TD><TD><TT>2</TT></TD><TD><TT>3</TT></TD><TD><TT>4</TT></TD></TR>
+			<TR><TD><TT>Q</TT></TD><TD><TT>W</TT></TD><TD><TT>E</TT></TD><TD><TT>R</TT></TD></TR>
+			<TR><TD><TT>A</TT></TD><TD><TT>S</TT></TD><TD><TT>D</TT></TD><TD><TT>F</TT></TD></TR>
+			<TR><TD><TT>Z</TT></TD><TD><TT>X</TT></TD><TD><TT>C</TT></TD><TD><TT>V</TT></TD></TR>
+		</TABLE>
+    <br><br><br>
+  </p>
+  <h2>Fetch/decode/execute loop</h2>
+  <p>
+    An emulator’s main task is simple. It runs in an infinite<br>
+    loop, and does these three tasks in succession:<br><br>
+    <b>Fetch</b> the instruction from memory at the current<br>
+     PC (program counter)<br><br>
+     <b>Decode</b> the instruction to find out what the emulator<br>
+      should do<br><br>
+      <b>Execute</b> the instruction and do what it tells you<br><br><br>
+      I’ll go through each of these steps below, but first: What speed should<br>
+      this loop run at? If you just run it as-is, your powerful computer will<br>
+      probably run the games way too fast to be playable.<br><br>
+      </p>
+      <h2>Timing</h2>
+      <p>
+        The original CHIP-8 computers had processors that ran at something like<br>
+        1 MHz, and the 90s HP48 calculators ran at around 4 MHz. That doesn’t tell<br>
+        us much, since the CHIP-8 instructions took a different number of cycles to<br>
+        run in their machine code implementations – and on different computers back<br>
+        then – but it does mean that different games might expect to run at different<br>
+        speeds, so you will probably want to make it configurable.<br><br>
+        <em>For the original timings for CHIP-8 instructions in the COSMAC VIP interpreter,<br>
+           see this page: <a href="https://jackson-s.me/2019/07/13/Chip-8-Instruction-Scheduling-and-Frequency.html" target="_blank">Chip 8 Instruction Scheduling and Frequency.</a></em><br><br>
+           In practice, a standard speed of around 700 CHIP-8 instructions<br>
+           per second fits well enough for most CHIP-8 programs you’ll find,<br>
+           which are mostly from the 90s. Play a few different ones and get a<br>
+           feel for what speed seems right.<br><br>
+         </p>
+         <h2>Fetch</h2>
+         <p>
+           Read the instruction that PC is currently pointing at from memory.<br>
+           An instruction is two bytes, so you will need to read two successive<br>
+          bytes from memory and combine them into one 16-bit instruction.<br><br>
+          You should then immediately increment the PC by 2, to be ready to<br>
+          fetch the next opcode. Some people do this during the “execute” stage,<br>
+          since some instructions will increment it by 2 more to skip an instruction,<br>
+          but in my opinion that’s very error-prone. Code duplication is a bad thing.<br>
+          If you forget to increment it in one of the instructions, you’ll have problems. Do it here!<br><br>
+         </p>
+         <h2>Decode</h2>
+         <p>
+           Other systems than CHIP-8 will have a more advanced “decode” stage<br>
+          (the opcode could have different addressing modes, operands, etc.).<br>
+           For CHIP-8, it’s pretty simple.<br><br>
+           CHIP-8 instructions are divided into broad categories by the first<br>
+           “nibble”, or “half-byte”, which is the first hexadecimal number.<br>
+           So, you basically just want to do a huge if/elseif statement<br>
+          here,doing different things depending on what the first number is.<br><br>
+          If your language supports switch statements, that’s by far the<br>
+          easiest way to go. Mask off (with a “binary AND”) the first number<br>
+          in the instruction, and have one case per number. Some of these<br>
+          cases will need separate switch statements inside them to further<br>
+          decode the instruction.<br><br>
+          Although every instruction will have a first nibble that tells you<br>
+          what kind of instruction it is, the rest of the nibbles will have<br>
+          different meanings. To differentiate these meanings, we usually<br>
+          call them different things, but all of them can be any hexadecimal<br>
+           number from 0 to F:<br><br>
+           <ul>
+             <li>X: The second nibble. Used to look up one of the 16<br>
+              registers (VX) from V0 through VF.</li><br>
+             <li>Y: The third nibble. Also used to look up one of the<br>
+              16 registers (VY) from V0 through VF.</li><br>
+             <li>N: The fourth nibble. A 4-bit number.</li><br>
+             <li>NN: The second byte (third and fourth nibbles).<br>
+                An 8-bit immediate number.</li><br>
+             <li>NNN: The second, third and fourth nibbles. A<br>
+                12-bit immediate memory address.</li><br><br>
+           </ul>
+           To avoid code duplication again, I suggest you<br>
+           extract these values from the opcode before <br>
+           decoding, instead of doing it inside each instruction.<br>
+           If you do it wrong just one place, you’ll have a hard<br>
+          time tracking that down.<br><br>
+          Note that X and Y are always used to look up the values in registers.<br>
+          One mistake I see a lot of make early on (and I’ve done it myself) is<br>
+          that they’ll use the acual value X in the instruction. You never want<br>
+          that! That’s only for the N operands. X and Y should always look up a<br>
+          value in the corresponding register.<br><br>
+        </p>
+
+        <h2>Execute</h2>
+        <p>
+          For CHIP-8, if you went with the switch approach (or similar), this<br>
+          won’t really be a separate stage. Just directly do what the<br>
+          instruction should do inside each case.<br><br>
+          In emulators for other systems, you might have a whole bunch of<br>
+          instructions of the same type – say, to add two numbers together<br>
+          – where the operands can be registers, memory locations, immediate<br>
+          values, etc. (these are called addressing modes). But for CHIP-8,<br>
+          that doesn’t matter.<br><br>
+        </p>
+
+
+
+
+
+
+</body>
+
+</html>

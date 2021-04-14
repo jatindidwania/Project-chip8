@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHIP-8 EMULATOR</title>
+    <link rel="icon" href="./favicon.ico">
+    <style type="text/css">
+
+    #top-bar {
+            background-color: #3f3f3f;
+            height: 70px;
+            margin: 0;
+            border: 1px solid #be2edd;
+            box-shadow: lightsalmon 0 0 6px 0;
+            border-radius: 3px;
+            padding: 10px;
+            border-bottom: 3px solid #4f4f4f;
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        #top-bar .wrapper {
+            width: 960px;
+            margin: 0 auto;
+        }
+
+        #top-bar ul {
+           float: right;
+           list-style: none;
+           margin-top: 26px;
+       }
+
+       #top-bar ul li {
+            float: left;
+            width: 150px;
+            text-align: center;
+        }
+
+        #top-bar a {
+            text-decoration: none;
+            color: #33ff66;
+        }
+
+        #top-bar a:hover {
+            color: #33ff66;
+        }
+
+
+       #info {
+            width: 80%;
+            min-height: 100px;
+            border: 1px solid #be2edd;
+            box-shadow: lightsalmon 0 0 6px 0;
+            border-radius: 3px;
+            background-color: #3f3f3f;
+            margin: 0 auto;
+            padding: 10px;
+            text-align: left;
+            font-family: 'Press Start 2P', monospace;
+            color: #33ff66;
+            clear: both;
+        }
+
+        #footer {
+            font-size: 10px;
+            text-align: center;
+            font-family: 'Press Start 2P', sans-serif;
+            color: #33ff66;
+            margin: 30px 0 5px;
+        }
+
+        pre {
+          font-size: 14px;
+          font-family: 'Courier New', Monospace;
+          white-space: pre;
+          font-weight: 600;
+          color: #33ff66
+        }
+
+        pre.logo{
+          font-size: 12px;
+          margin: 30px 0;
+          font-weight: 400;
+        }
+
+</style>
+</head>
+<body>
+  <div id="top-bar">
+    <div class="wrapper">
+      <ul>
+        <li><a href="https://github.com/jatindidwania/Chip-8_Emulator" target="_blank">source</a></li>
+        <li><a href="About/index.html" target="_blank">docs</a></li>
+        <li><a href="About/index.html" target="_blank">tests</a></li>
+        </ul>
+        <h3>👾 CHIP-8 EMULATOR 👾</h3>
+      </div>
+    </div>
+
+    <div id="info">
+      Original CHIP-8 keyboard layout is mapped to PC keyboard as follows:<br/><br/>
+      |1|2|3|C|  =>  |1|2|3|4|<br/>
+      |4|5|6|D|  =>  |Q|W|E|R|<br/>
+      |7|8|9|E|  =>  |A|S|D|F|<br/>
+      |A|0|B|F|  =>  |Z|X|C|V|<br/>
+    </div>
+
+    <div id="footer">
+      Copyright &copy; 2021 by JD. All Rights Reserved.
+      </div>
+
+
+    <div class="rom-selector">
+        <span id="loading-text"></span>
+        <button id="reload">RELOAD</button>
+        ROM :
+        <select name="roms" id="roms">
+            <option value="BLITZ">BLITZ</option>
+            <option value="BLINKY">BLINKY</option>
+            <option value="BRICK">BRICK</option>
+            <option value="MAZE">MAZE</option>
+            <option value="PICTURE">PICTURE</option>
+            <option value="TANK">TANK</option>
+            <option value="SPACE-INVADER">SPACE-INVADER</option>
+
+        </select>
+    </div>
+    <main>
+        <div class="console">
+            <h1><pre class="logo">
+       ██████╗██╗  ██╗██╗██████╗   █████╗
+      ██╔════╝██║  ██║██║██╔══██╗ ██╔══██╗
+      ██║     ███████║██║██████╔╝ ╚█████╔╝
+      ██║     ██╔══██║██║██╔═══╝  ██╔══██╗
+      ╚██████╗██║  ██║██║██║      ╚█████╔╝
+       ╚═════╝╚═╝  ╚═╝╚═╝╚═╝       ╚════╝</pre></h1>
+            <canvas id="screen"></canvas>
+            <script src="./src/index.js"></script>
+        </div>
+    </main>
+</body>
+</html>
